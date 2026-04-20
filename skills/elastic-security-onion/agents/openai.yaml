@@ -1,0 +1,4 @@
+interface:
+  display_name: "Elastic Security Onion"
+  short_description: "Query Security Onion telemetry"
+  default_prompt: "Use $elastic-security-onion to query Security Onion Elasticsearch telemetry at so-rest.jhu-ctih.training across host, authentication, and network data."
