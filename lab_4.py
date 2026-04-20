@@ -332,15 +332,72 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ## Lab 0xe
+    # Lab 0xe
     In this lab we'll be using Codex to perform threat hunts.
 
-    There are two main scenarios:
-    - Scenario 1: 2024-07-29 to 2024-08-02
-    - Scenario 2: 2024-11-22 to 2024-11-27
+    ## AGENTS.md
+    The repo provides a baseline AGENTS.md file. Take a minute to inspect it.
 
-    ## Hypotheses
-    All good threat hunts start with a hpyothesis, informed by domain expertise, threat intelligence, and situational awareness. You'll find documents that support these in INSERT PATH
+    The AGENTS.md file provides guidance on:
+    - The repository layout.
+    - How to conduct a threat hunt.
+
+    Inspect the directories referenced by the AGENTS.md file, especially the `context` directory. This folder contains a few markdown files that describe what telemetry is available in our SIEM and provides some starter queries so Codex knows how to use the data that's available.
+
+    The hunting guidance should cause Codex to first prepare for a hunt by taking your prompt and performing research on it. Codex can natively search the web and read local files. Then it will generate some hypotheses, and the AGENTS.md file provides some example hypotheses to show Codex what they should look like. The file then provides guidance on retrieving data from the SIEM and analyzing the results to compare against the hypotheses it makes.
+
+    It does _not_ provide guidance on how to structure a threat hunting report. You may want to add a section that describes what you want your report to look like.
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ## Start a hunt
+
+    There are two main scenarios. Both of these contain an entire adversary killchain from initial access to actions on objective.
+
+    Here is some general information about the organization you are defending:
+
+    > Dunder Mifflin is a regional supplier of various paper products, including copy paper, stationery, and other office supplies. The company's geographical footprint primarily centers around its Mid-Atlantic and New England offices. Due to the COVID pandemic, there has been an increase in remote work and remote access (such as RDP and VPN technologies) were hastily implemented to keep the business afloat.
+
+    > The challenges faced by the company's business climate revolve around the increasing digitization and the shift towards paperless offices in the modern world. As technology advances, the demand for traditional paper products declines, posing a significant threat to the company's long-term sustainability. Additionally, it faces fierce competition from other paper suppliers and online retailers, requiring the sales team to work hard to secure and retain customers, which can lead to them taking shortcuts to keep customers happy. The tough margins leave little room for updating computers and maintaining software licenses. The office culture itself also presents challenges, with various quirky and sometimes counterproductive personalities creating a unique and often chaotic work environment.
+
+    ### Scenario 1
+
+    > The company is currently in high spirits due to the recent successful acquisition of a significant contract with the South Korean Ministry of National Defense. This represents a huge lifeline and ensures everyone keeps their jobs.
+
+    **When**: 2024-07-29 to 2024-08-02
+
+    Intel: use `intel/scenario1/intel.pdf`.
+
+    ### Scenario 2
+
+    > Due to its prior breaches, Dunder Mifflin has retained JHConsulting to help them identify and remediate security issues. Working with JHConsulting, Dunder Miffilin admins have been able to patch the pfSense vulnerability, but the remaining vulnerabilities were deprioritized until after the holidays. JHConsulting also pulled relevant OSINT from dark web access forums.
+
+    **When**: 2024-11-22 to 2024-11-27
+
+    Intel: use `intel/scenario2/intel1.pdf` and `intel/scenario2/intel2.pdf`.
+
+    To start a hunt, provide Codex with:
+    - Your overall intent
+    - The timeframe to scope the hunt
+    - The intel references by typing `@intel` and selecting the appropriate files.
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ### Hunt progress
+    Watch Codex work. How long does it work for before producing an output?
+
+    Some things to look for:
+    - Does it draft a plan? If not, try using `/plan` to turn plan mode on.
+    - Does it stop after finding one evidence of attack? If so, ask it follow up questions like "Did the attacker access other computers?"
+    - Does it write an intermediate report? If not, ask it to draft it's output as it goes.
     """)
     return
 
@@ -349,7 +406,19 @@ def _(mo):
 def _(mo):
     mo.md(r"""
     ## Create a skill
-    [$skill-creator](/Users/kimo/.codex/skills/.system/skill-creator/SKILL.md) look at the [0xc_tool_calling_assistants.py](ai_for_mac_security_v2/0xc_tool_calling_assistants.py) you will find a ThreatFox tool called get_threatfox_intel_by_ip_address. i'd like you to reimplement that as a skill
+    After Codex has finished its investigation you should still have some lingering questions, mainly around attribution. We can use threat intelligence services like VirusTotal to help close this gap.
+
+    You do not currently have a skill for this, but you can ask Codex to make one with a prompt like:
+
+    ```
+    $skill-creator make a skill that uses the virustotal api
+    to enrich ip addresses, domain names, and file hashes.
+    use the api key provided in our .env file
+    ```
+
+    Once Codex makes the skill, ask it to use it to enrich the IOCs it found in its investigation and to update its report.
+
+    Review the report and see how it did.
     """)
     return
 

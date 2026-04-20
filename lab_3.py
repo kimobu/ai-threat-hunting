@@ -114,6 +114,8 @@ def _(mo):
     /// admonition
     Follow the install instructions:
     ```
+    cd ~/code
+    https://github.com/mytechnotalent/MalwareBazaar_MCP.git
     cd MalwareBazaar_MCP
     uv init .
     uv venv

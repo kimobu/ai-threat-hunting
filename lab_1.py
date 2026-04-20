@@ -423,6 +423,15 @@ def _(mo):
 
 
 @app.cell
+def _(group_pid, hostname, merged_df, pl):
+    merged_df.filter(
+        (pl.col("host.name") == hostname) &
+        (pl.col("process.group_leader.pid") == group_pid)
+    )
+    return
+
+
+@app.cell
 def _(merged_df, mo, pl):
     hostname = "scr-it-mac.local"
     group_pid = 12416
@@ -432,12 +441,28 @@ def _(merged_df, mo, pl):
         (pl.col("process.group_leader.pid") == group_pid)
     )
 
-    _process_data = _test_group.sort("@timestamp", "process.pid").select(
-        ["@timestamp", "process.pid", "process.parent.pid", "process.parent.name", "process.command_line", "user.name", "user.department", "user.title"]
-    ).to_pandas().to_markdown()
+    cols = [
+        "@timestamp",
+        "process.pid",
+        "process.parent.pid",
+        "process.parent.name",
+        "process.command_line",
+        "user.name",
+        "user.department",
+        "user.title",
+    ]
 
+    rows = (
+        _test_group
+        .sort(["@timestamp", "process.pid"])
+        .select(cols)
+        .to_dicts()
+    )
+
+    import pandas as pd
+    _process_data = pd.DataFrame(rows).to_markdown(index=False)
     mo.md(_process_data)
-    return
+    return group_pid, hostname
 
 
 @app.cell(hide_code=True)
@@ -474,7 +499,6 @@ def _():
     </EXAMPLES>
 
     """
-    system_prompt_example = "IiIiCjxJREVOVElUWT4KWW91IGFyZSBhIGN5YmVyIHNlY3VyaXR5IGFuYWx5c3QgYXQgRHVuZGVyIE1pZmZsaW4gcGFwZXIgY29tcGFueS4gWW91IHNwZWNpYWxpemUgaW4gYW5hbHl6aW5nIHByb2Nlc3MgZXhlY3V0aW9uIGZyb20gbWFjT1MgZW5kcG9pbnRzLiBZb3VyIGdvYWwgaXMgdG8gaWRlbnRpZnkgY29tbWFuZCBsaW5lIGFjdGl2aXR5IHRoYXQgaW5kaWNhdGVzIG1hbGljaW91cyBhY3Rpdml0eSBhbmQgc3VyZmFjZSBpdCB0byBhIGh1bWFuIGZvciByZXZpZXcuIFlvdSBzaG91bGQgdXNlIGEgY2xpbmljYWwgdG9uZSB0aGF0IGV4cGxhaW5zIHRoZSBmYWN0cyBpbiBhIGNsZWFyIGFuZCBjb25jaXNlIG1hbm5lciBhbmQgYXZvaWQganVtcGluZyB0byBjb25jbHVzaW9ucyB1bmxlc3MgdGhlcmUgaXMgb3ZlcndoZWxtaW5nIGV2aWRlbmNlLgo8L0lERU5USVRZPgoKPElOU1RSVUNUSU9OUz4KWW91IHdpbGwgYmUgZ2l2ZW4gZGF0YSBhYm91dCBwcm9jZXNzIGV4ZWN1dGlvbiB0aGF0IGNvbWVzIGZyb20gQXBwbGUncyBFbmRwb2ludCBTZWN1cml0eSBGcmFtZXdvcmsgdGhhdCBoYXMgYmVlbiBjb2xsZWN0ZWQgdmlhIHRoZSBFbGFzdGljIEFnZW50IGFuZCB0cmFuc2Zvcm1lZCBpbnRvIEVsYXN0aWMgQ29tbW9uIFNjaGVtYS4gVGhlIHByb2Nlc3MgZGF0YSB3aWxsIGJlIGluIHRhYmxlIGZvcm1hdCwgYW5kIGl0IHJlcHJlc2VudHMgYWxsIHByb2Nlc3NlcyBmcm9tIGEgc3BlY2lmaWMgcHJvY2VzcyBncm91cC4gVGhlIHByb2Nlc3MgaW5mb3JtYXRpb24gaXMgb3JkZXJlZCBieSB0aW1lIGFuZCBpbmRpY2F0ZXMgdGhlIG9yZGVyIGluIHdoaWNoIHRoZSBwcm9jZXNzZXMgb2NjdXJyZWQuIFlvdSB3aWxsIGJlIHByb3ZpZGVkIHdpdGggdGhlIHByb2Nlc3MgSUQsIHBhcmVudCBwcm9jZXNzIElELCBwYXJlbnQgcHJvY2VzcyBuYW1lLCB0aGUgd29ya2luZyBkaXJlY3Rvcnkgb2YgdGhlIHByb2Nlc3MsIGFuZCB0aGUgcHJvY2VzcyBjb21tYW5kIGxpbmUuIFlvdSB3aWxsIGFsc28gYmUgZ2l2ZW4gaW5mb3JtYXRpb24gYWJvdXQgdGhlIGhvc3QgdGhhdCB0aGUgcHJvY2Vzc2VzIGV4ZWN1dGVkIG9uIGFuZCB0aGUgbmFtZSwgZGVwYXJ0bWVudCwgYW5kIHRpdGxlIGFib3V0IHRoZSB1c2VyIHdobyBleGVjdXRlZCB0aGUgY29tbWFuZHMuCgpUbyBkZXRlcm1pbmUgaWYgdGhlIGFjdGl2aXR5IGlzIG1hbGljaW91cywgY29uc2lkZXIgdGhlIGZvbGxvd2luZyBmYWN0b3JzOgotIFdoYXQgd2FzIHRoZSBpbnRlbnQgb2YgdGhlIHByb2Nlc3Nlcz8gCi0gRG9lcyB0aGF0IGludGVudCBtYXAgdG8gYW55IGtub3duIE1JVFJFIEFUVCZDSyBUVFBzPwotIERvZXMgdGhlIHByb2Nlc3MgYWN0aXZpdHkgbWFrZSBzZW5zZSBnaXZlbiB0aGUgdXNlciBhbmQgdGhlaXIgcm9sZT8KLSBXaGVuIGRpZCB0aGUgYWN0aXZpdHkgb2NjdXIgKGFsbCB0aW1lcyBhcmUgaW4gVVRDKT8gV2FzIGl0IGluc2lkZSBub3JtYWwgd29ya2luZyBob3Vycz8KCllvdXIgb3V0cHV0IHNob3VsZCBjb25zaXN0IG9mIGEgcmlzayBzY29yZSBmcm9tIDEtMTAsIHdpdGggMSBiZWluZyB2ZXJ5IGJlbmlnbiBhbmQgMTAgYmVpbmcgdmVyeSBtYWxpY2lvdXMuIFlvdSBzaG91bGQgYWxzbyBwcm92aWRlIGEgc2hvcnQgZGVzY3JpcHRpb24gb2Ygd2hhdCB0aGUgcHJvY2Vzc2VzIGRpZCBhbmQgd2h5IHlvdSBhc3NpZ25lZCB0aGUgc2NvcmUgeW91IGRpZC4KPC9JTlNUUlVDVElPTlM+Cgo8RVhBTVBMRVM+Ci0gTmV3IGFwcGxpY2F0aW9ucyBhc2tpbmcgZm9yIHBhc3N3b3JkcyB0byBkZWNyeXB0IHRoZSBrZXljaGFpbjogcmlzayBzY29yZSAxMCwgYSBjb21tb24gaW5mb3JtYXRpb24gc3RlYWxpbmcgbWFsd2FyZSBwYXR0ZXJuLgotIFVzZXJzIHVzaW5nIGN1cmwgdG8gcmV0cmlldmUgYSBzY3JpcHQgZnJvbSBhIHdlYnNlcnZlciBhbmQgcGlwaW5nIHRvIGJhc2g6IHJpc2sgc2NvcmUgNSwgY291bGQgYmUgbGVnaXRpbWF0ZSBidXQgd2UgbmVlZCB0byBpbnZlc3RpZ2F0ZSB0aGUgc2NyaXB0IGFuZCB3ZWJzZXJ2ZXIuCi0gQ3JlYXRpbmcgbmV3IGZpbGVzIGluIHRoZSBMYXVuY2hBZ2VudHMgb3IgTGF1bmNoRGFlbW9ucyBkaXJlY3Rvcnk6IHJpc2sgc2NvcmUgOCwgdGhpcyBjb3VsZCBiZSBtYWx3YXJlIHBlcnNpc3RlbmNlIGJ1dCB3ZSBuZWVkIHRvIGludmVzdGlnYXRlIHRoZSBwZXJzaXN0ZWQgZmlsZQo8L0VYQU1QTEVTPgoKIiIi"
     return (system_prompt,)
 
 
@@ -532,19 +556,16 @@ def _(RiskEvent, pl, system_prompt):
         <state>{group_df["user.geo.region_name"].unique()[0]}</state>
     </user>
                     """
-                    user_context_solution = "ZiIiIjx1c2VyPgogICAgPG5hbWU+e2dyb3VwX2RmWyJ1c2VyLm5hbWUiXS51bmlxdWUoKVswXX08L25hbWU+CiAgICA8ZGVwYXJ0bWVudD57Z3JvdXBfZGZbInVzZXIuZGVwYXJ0bWVudCJdLnVuaXF1ZSgpWzBdfTwvZGVwYXJ0bWVudD4KICAgIDx0aXRsZT57Z3JvdXBfZGZbInVzZXIudGl0bGUiXS51bmlxdWUoKVswXX08L3RpdGxlPgogICAgPGNpdHk+e2dyb3VwX2RmWyJ1c2VyLmdlby5jaXR5X25hbWUiXS51bmlxdWUoKVswXX08L2NpdHk+CiAgICA8c3RhdGU+e2dyb3VwX2RmWyJ1c2VyLmdlby5yZWdpb25fbmFtZSJdLnVuaXF1ZSgpWzBdfTwvc3RhdGU+CjwvdXNlcj4KICAgICAgICAgICAgICAgICIiIg=="
 
                     host_context = f"""<host>
         <macos_version>{group_df["host.os.family"][0]}</macos_version>
         <name>{host_name}</name>
     </host>
                     """
-                    host_context_solution = "ZiIiIjxob3N0PgogICAgPG1hY29zX3ZlcnNpb24+e2dyb3VwX2RmWyJob3N0Lm9zLmZhbWlseSJdWzBdfTwvbWFjb3NfdmVyc2lvbj4KICAgIDxuYW1lPntob3N0X25hbWV9PC9uYW1lPgo8L2hvc3Q+CiAgICAgICAgICAgICAgICAiIiI="
 
                     process_data = group_df.sort("@timestamp", "process.pid").select(
                         "@timestamp", "process.pid", "process.parent.pid", "process.parent.name", "process.command_line", "process.working_directory"
                     ).to_pandas().to_markdown()
-                    process_data_solution = "Z3JvdXBfZGYuc29ydCgiQHRpbWVzdGFtcCIsICJwcm9jZXNzLnBpZCIpLnNlbGVjdCgKICAgICAgICAgICAgICAgICAgICAiQHRpbWVzdGFtcCIsICJwcm9jZXNzLnBpZCIsICJwcm9jZXNzLnBhcmVudC5waWQiLCAicHJvY2Vzcy5wYXJlbnQubmFtZSIsICJwcm9jZXNzLmNvbW1hbmRfbGluZSIsICJwcm9jZXNzLndvcmtpbmdfZGlyZWN0b3J5IgogICAgICAgICAgICAgICAgKS50b19wYW5kYXMoKS50b19tYXJrZG93bigp"
 
                     system_message = system_prompt + user_context + host_context
 
@@ -604,7 +625,7 @@ def _(RiskEvent, pl, system_prompt):
             print(system_message)
             print(user_message)
 
-    return (GPT,)
+    return GPT, os
 
 
 @app.cell(hide_code=True)
@@ -681,7 +702,6 @@ def _():
     from pydantic import BaseModel 
 
     class RiskEvent(BaseModel):
-        _solution = "cmlza19zY29yZTogaW50IAp0dHBzOiBsaXN0W3N0cl0KYW5hbHlzaXM6IHN0cg=="
         risk_score: int 
         ttps: list[str]
         analysis: str
@@ -919,7 +939,8 @@ def _(mo):
 
 
 @app.cell
-def _(final_df):
+def _(final_df, os):
+    os.makedirs("data", exist_ok=True)
     final_df.write_parquet("data/gpt_detector_results.parquet")
     return
 

@@ -250,7 +250,6 @@ def _(
         tools=[get_network_connections_by_process_ids],
         model="gpt-5-mini"
     )
-
     return elastic_context, siem_agent
 
 
